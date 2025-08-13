@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 app = Flask(__name__)
 
-uri = "mongodb+srv://agnihotriansh07:3ZajVoORvOkwa8S9@cluster0.qbb7t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = os.getenv("MONGO_URI")
 client = MongoClient(uri)
 # Access database
 db = client["job_scraper"]
