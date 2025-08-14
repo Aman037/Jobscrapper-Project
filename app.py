@@ -19,7 +19,12 @@ users_col = db["users"]
 def save_job():
     data = request.json
     email = data.get("email")
-    if not email or not data.get("title") or not data.get("company") or not data.get("link") or not data.get("location"):
+    title = data.get("title")
+    company = data.get("company")
+    link = data.get("link")
+    location = data.get("location")
+    
+    if not email or not title or not company or not link or not location:
         return jsonify({"error": "Missing required fields"}), 400
 
     job_data = {
@@ -40,7 +45,7 @@ def get_saved_jobs():
         return jsonify({"error": "Email query parameter is required"}), 400
 
     jobs = list(saved_jobs_col.find({"email": email}, {"_id": 0, "email": 0}))
-    return jsonify(jobs)
+    return jsonify(jobs) if jobs else jsonify({"message": "No jobs found"}), 200
 
 # set_preferences route
 @app.route("/set_preferences", methods=["POST"])
