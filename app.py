@@ -3,6 +3,9 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from pymongo.errors import DuplicateKeyError
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 load_dotenv()
 app = Flask(__name__)
@@ -15,6 +18,61 @@ db = client["job_scraper"]
 saved_jobs_col = db["saved_jobs"]
 users_col = db["users"]
 jobs_col = db["jobs"]  # scraped jobs collection
+
+def send_email(to_email, subject, body):
+    smtp_server = os.getenv("SMTP_SERVER")
+    smtp_port = int(os.getenv("SMTP_PORT"))
+    email_user = os.getenv("EMAIL_USER")
+    email_pass = os.getenv("EMAIL_PASS")
+
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = email_user
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "html"))  # HTML formatting
+
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()  # Secure connection
+            server.login(email_user, email_pass)
+            server.sendmail(email_user, to_email, msg.as_string())
+
+        print(f"✅ Email sent to {to_email}")
+    except Exception as e:
+        print(f"❌ Error sending email to {to_email}: {e}")
+
+@app.route("/send_notifications", methods=["POST"])
+def send_notifications():
+    users = list(users_col.find({}, {"_id": 0, "email": 1, "preferences": 1}))
+    if not users:
+        return jsonify({"message": "No users found"}), 200
+
+    for user in users:
+        email = user["email"]
+        prefs = user.get("preferences", {})
+
+        # Build job search filter
+        query = {}
+        if "role" in prefs:
+            query["title"] = {"$regex": prefs["role"], "$options": "i"}
+        if "location" in prefs:
+            query["location"] = {"$regex": prefs["location"], "$options": "i"}
+
+        matched_jobs = list(jobs_col.find(query, {"_id": 0}))
+        if not matched_jobs:
+            continue
+
+        # Format email body
+        body = "<h2>Matched Jobs for You</h2><ul>"
+        for job in matched_jobs:
+            body += f"<li><b>{job['title']}</b> at {job['company']} - {job['location']}<br>"
+            body += f"<a href='{job['link']}'>View Job</a></li><br>"
+        body += "</ul>"
+
+        send_email(email, "Your Job Alerts", body)
+
+    return jsonify({"message": "Notifications sent successfully"}), 200
+
 
 # Test job insert (prevents duplicates)
 @app.route("/add_job", methods=["POST"])
