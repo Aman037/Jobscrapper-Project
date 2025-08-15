@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from dotenv import load_dotenv
+from pymongo.errors import DuplicateKeyError
 import os
 
 load_dotenv()
@@ -13,6 +14,44 @@ db = client["job_scraper"]
 # Access a collection
 saved_jobs_col = db["saved_jobs"]
 users_col = db["users"]
+jobs_col = db["jobs"]  # scraped jobs collection
+
+# Test job insert (prevents duplicates)
+@app.route("/add_job", methods=["POST"])
+def add_job():
+    job_data = request.json
+    if not all(k in job_data for k in ("title", "company", "location", "link")):
+        return jsonify({"error": "Missing required job fields"}), 400
+
+    try:
+        jobs_col.insert_one(job_data)
+        return jsonify({"message": "Job added successfully"}), 201
+    except DuplicateKeyError:
+        return jsonify({"message": "Duplicate job skipped"}), 200
+
+# Match jobs to user preferences
+@app.route("/get_jobs", methods=["GET"])
+def get_jobs():
+    email = request.args.get("email")
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    # Fetch user preferences
+    user = users_col.find_one({"email": email})
+    if not user or "preferences" not in user:
+        return jsonify({"error": "User preferences not found"}), 404
+
+    prefs = user["preferences"]
+
+    # Build MongoDB filter dynamically
+    query = {}
+    if "role" in prefs:
+        query["title"] = {"$regex": prefs["role"], "$options": "i"}
+    if "location" in prefs:
+        query["location"] = {"$regex": prefs["location"], "$options": "i"}
+
+    matched_jobs = list(jobs_col.find(query, {"_id": 0}))
+    return jsonify(matched_jobs)
 
 # Route to save a job
 @app.route("/save_job", methods=["POST"])
@@ -66,4 +105,5 @@ def set_preferences():
     return jsonify({"message": "Preferences saved successfully"}), 201
 
 if __name__ == "__main__":
+    jobs_col.create_index("link", unique=True)
     app.run(debug=True)
