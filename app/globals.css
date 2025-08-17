@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* Custom keyframes for animations */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@media (max-width: 500px) {
+  .resume{
+    text-align: center;
+  }
+}
+
+@keyframes fade-in-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite;
+}
+.animate-fade-in-down {
+  animation: fade-in-down 0.5s ease-out;
+}
