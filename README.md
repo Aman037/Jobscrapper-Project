@@ -1,11 +1,10 @@
 ## 🈸 Job Scrapper Website – Generative AIX  
 
 A full-stack **Job Scrapping Platform** built under the *Generative AIX* startup initiative.  
-The platform aims to provide job seekers with powerful tools including:  
+The Generative AIX platform aims to provide job seekers with powerful tools including:  
 - **Job Scrapping** from multiple job portals  
 - **AI-powered Resume Builder**  
-- **AI-based Image Generation** for resumes and portfolios  
-- Seamless **frontend–backend integration** with CI/CD pipelines  
+- **AI-based Image Generation** for resumes and portfolios
 
 ---
 
@@ -22,7 +21,6 @@ The project consists of four main parts:
 - Responsive and intuitive **UI built with Next.js**  
 - Modular **components** for scalability and easy integration  
 - Planned integration with job scrapping APIs and MongoDB backend  
-- Future modules: **Resume Builder** and **AI Image Generation**  
 
 ---
 
